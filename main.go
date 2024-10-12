@@ -1,28 +1,25 @@
 package main
 
 import (
+	"fmt"
 	"github.com/alexflint/go-arg"
 	"github.com/antlr4-go/antlr/v4"
 	"github.com/robertkrimen/otto"
 	"io/ioutil"
 	"log"
+	"os"
+	"reflect"
+	"strconv"
+	"strings"
+	"time"
 	"treescan-go/parser"
 )
-
-//type SourceNode struct {
-//	Name     string
-//	StartRow int
-//	StartCol int
-//	EndRow   int
-//	EndCol   int
-//	Text     string
-//	Parent   SourceNode
-//	Children []SourceNode
-//}
 
 type apexListener struct {
 	*parser.BaseApexParserListener
 }
+
+var _sourceMap map[string]string
 
 func (a apexListener) VisitTerminal(node antlr.TerminalNode) {
 
@@ -37,11 +34,15 @@ func (a apexListener) VisitErrorNode(node antlr.ErrorNode) {
 func (a apexListener) EnterEveryRule(ctx antlr.ParserRuleContext) {
 	// Pass in reflect.TypeOf(x) and context
 	vm := otto.New()
-	vm.Set("context", ctx)
+	vm.Set("START_LINE", ctx.GetStart().GetLine())
+	vm.Set("STOP_LINE", ctx.GetStop().GetLine())
+	vm.Set("CONTEXT", ctx.GetText())
+	vm.Set("NODE_TYPE", reflect.TypeOf(ctx).String())
 	vm.Run(`
-    abc = 2 + 2;
-	console.log(context.GetParent().GetText());
-    console.log("The value of abc is " + abc); // 4
+	var c = CONTEXT.GetText();
+	var x = 1;
+	//console.log("Source: " + CONTEXT);
+    //console.log("Type: " + NODE_TYPE); // 4
 	`)
 }
 
@@ -63,12 +64,36 @@ var args struct {
 }
 
 func main() {
+	var startedAt = time.Now()
 	arg.MustParse(&args)
 
 	// Pretty great documentation on how to integrate Otto:
 	// https://github.com/robertkrimen/otto
 
-	data, err := ioutil.ReadFile("C:\\repos\\va-teams\\working\\va-teams\\force-app\\main\\default\\classes\\VCR\\Tests\\VCR_VisitRepoTest.cls")
+	_sourceMap = make(map[string]string)
+	//"C:\\repos\\va-teams\\working\\va-teams\\force-app\\main\\default\\classes\\"
+	var path = args.SourcePaths
+	files, err := os.ReadDir(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, file := range files {
+		var name = file.Name()
+		if strings.HasSuffix(name, ".cls") {
+			scanfile(path + name)
+			fmt.Println(file.Name())
+		}
+	}
+	var stoppedAt = time.Now()
+	var runTime = stoppedAt.Sub(startedAt)
+	var secondsToRun = runTime.Seconds()
+	var stringRuntime = strconv.FormatFloat(secondsToRun, 'f', -1, 64)
+	println("Execution time: %s\n", stringRuntime)
+}
+
+func scanfile(fileName string) {
+	data, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -80,6 +105,7 @@ func main() {
 	p.BuildParseTrees = true
 
 	antlr.ParseTreeWalkerDefault.Walk(&apexListener{}, p.CompilationUnit())
+
 }
 
 //TIP See GoLand help at <a href="https://www.jetbrains.com/help/go/">jetbrains.com/help/go/</a>.
