@@ -78,11 +78,16 @@ func main() {
 		log.Fatal(err)
 	}
 
-	for _, file := range files {
-		var name = file.Name()
-		if strings.HasSuffix(name, ".cls") {
-			scanfile(path + name)
-			fmt.Println(file.Name())
+	if args.Debug {
+		scanfile("C:\\repos\\va-teams\\working\\va-teams\\force-app\\main\\default\\classes\\test_ServiceResponse.cls")
+	}
+	if !args.Debug {
+		for _, file := range files {
+			var name = file.Name()
+			if strings.HasSuffix(name, ".cls") {
+				scanfile(path + name)
+				fmt.Println(file.Name())
+			}
 		}
 	}
 	var stoppedAt = time.Now()
@@ -97,7 +102,9 @@ func scanfile(fileName string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	is := antlr.NewInputStream(string(data))
+	var sourceString = string(data)
+
+	is := antlr.NewInputStream(sourceString)
 	lexer := parser.NewApexLexer(is)
 	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
 	p := parser.NewApexParser(stream)
