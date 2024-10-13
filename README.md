@@ -6,6 +6,13 @@ It is a static analysis tool for Salesforce source code. Rules are written in Ja
 
 This is a rough skeleton of how things should work. Very much a work in progress, assume there be dragons everywhere.
 
+### Progress/Notes/Cautions
+
+* The build is broken currently, but not by much. Tinkering with different ways to handle rule files. My idea is as follows:
+  * One JSON file (see scripts directory) that specifies the rule filenames and the node context they scan (method invocations, class declarations, etc.)
+  * Each rule is a separate .js script file in the same directory as the abpve config file.
+  * Why? To keep the process lean. Don't do any processing if you don't have to.
+
 ### Current Issues
 
 This is just stuff I know about and will be fixing soon:
