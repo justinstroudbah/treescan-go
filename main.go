@@ -13,13 +13,14 @@ import (
 	"strings"
 	"time"
 	"treescan-go/parser"
+	"treescan-go/util"
 )
 
 type apexListener struct {
 	*parser.BaseApexParserListener
 }
 
-var _sourceMap map[string]string
+var sourceMap map[string][]string
 
 func (a apexListener) VisitTerminal(node antlr.TerminalNode) {
 
@@ -32,25 +33,30 @@ func (a apexListener) VisitErrorNode(node antlr.ErrorNode) {
 }
 
 func (a apexListener) EnterEveryRule(ctx antlr.ParserRuleContext) {
-	// Pass in reflect.TypeOf(x) and context
 
-	var typeOfNode = reflect.TypeOf(ctx).String()
+	// Set up convenience variables to be used by rule scripts
+	var nodeType = reflect.TypeOf(ctx).String()
 	var contextSource = ctx.GetText()
 	var startLine = ctx.GetStart().GetLine()
 	var stopLine = ctx.GetStop().GetLine()
 
+	nodeTypeCompact := strings.Split(nodeType, ".")[1]
+
 	vm := otto.New()
 	vm.Set("START_LINE", startLine)
 	vm.Set("STOP_LINE", stopLine)
-	vm.Set("CONTEXT", contextSource)
-	vm.Set("NODE_TYPE", typeOfNode)
-	vm.Run(`
-	var c = CONTEXT.GetText();
-	var x = 1;
-	//console.log("Source: " + CONTEXT);
-    //console.log("Type: " + NODE_TYPE); // 4
-	`)
-	println(typeOfNode)
+	vm.Set("SOURCE", contextSource)
+	vm.Set("CONTEXT", ctx)
+	vm.Set("NODE_TYPE", nodeTypeCompact)
+
+	for nodeType, scripts := range sourceMap {
+		if nodeType == nodeTypeCompact {
+			for _, script := range scripts {
+				vm.Run(script)
+			}
+		}
+	}
+
 }
 
 func (a apexListener) ExitEveryRule(ctx antlr.ParserRuleContext) {
@@ -77,13 +83,16 @@ func main() {
 	// Pretty great documentation on how to integrate Otto:
 	// https://github.com/robertkrimen/otto
 
-	_sourceMap = make(map[string]string)
 	//"C:\\repos\\va-teams\\working\\va-teams\\force-app\\main\\default\\classes\\"
 	var path = args.SourcePaths
 	files, err := os.ReadDir(path)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	sourceMap = make(map[string][]string)
+
+	sourceMap = util.ReadRuleConfiguration()
 
 	if args.Debug {
 		scanfile("C:\\repos\\va-teams\\working\\va-teams\\force-app\\main\\default\\classes\\test_ServiceResponse.cls")

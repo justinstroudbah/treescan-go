@@ -1,4 +1,1 @@
-[@type=MethodCallExpressionContext]
-
-
-console.log(CONTEXT.GetText())
+console.log(SOURCE);
