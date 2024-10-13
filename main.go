@@ -33,17 +33,24 @@ func (a apexListener) VisitErrorNode(node antlr.ErrorNode) {
 
 func (a apexListener) EnterEveryRule(ctx antlr.ParserRuleContext) {
 	// Pass in reflect.TypeOf(x) and context
+
+	var typeOfNode = reflect.TypeOf(ctx).String()
+	var contextSource = ctx.GetText()
+	var startLine = ctx.GetStart().GetLine()
+	var stopLine = ctx.GetStop().GetLine()
+
 	vm := otto.New()
-	vm.Set("START_LINE", ctx.GetStart().GetLine())
-	vm.Set("STOP_LINE", ctx.GetStop().GetLine())
-	vm.Set("CONTEXT", ctx.GetText())
-	vm.Set("NODE_TYPE", reflect.TypeOf(ctx).String())
+	vm.Set("START_LINE", startLine)
+	vm.Set("STOP_LINE", stopLine)
+	vm.Set("CONTEXT", contextSource)
+	vm.Set("NODE_TYPE", typeOfNode)
 	vm.Run(`
 	var c = CONTEXT.GetText();
 	var x = 1;
 	//console.log("Source: " + CONTEXT);
     //console.log("Type: " + NODE_TYPE); // 4
 	`)
+	println(typeOfNode)
 }
 
 func (a apexListener) ExitEveryRule(ctx antlr.ParserRuleContext) {

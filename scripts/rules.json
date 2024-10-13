@@ -1,0 +1,10 @@
+{
+  "rules": [
+    {
+      "nodeType":"MethodCallExpressionContext",
+      "scripts": [
+        "TestRule.js"
+      ]
+    }
+  ]
+}
