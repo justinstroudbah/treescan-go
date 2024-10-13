@@ -30,7 +30,7 @@ This is just stuff I know about and will be fixing soon:
 
 ### Can I run this?
 
-Go for it. Right now only one of the arguments is actually supported, `-s` or `--scan`. Right now it only accepts one path and doesn't recurse.
+Go for it. ~~Right now only one of the arguments is actually supported, `-s` or `--scan`. Right now it only accepts one path and doesn't recurse.~~ `-d` or `--debug` also works.
 
 ### How Will it Look Eventually?
 
