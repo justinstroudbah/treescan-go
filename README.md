@@ -8,13 +8,14 @@ This is a rough skeleton of how things should work. Very much a work in progress
 
 ### Progress/Notes/Cautions
 
+* One thing I'm considering...when a given rule is entered (a node, if you will) I can allow the JavaScript VM's state to persist across that particular enter event for all the scripts associated with that context. 
 * Got some more stuff working, some stuff I need to figure out.
   * Rules are now being loaded via the config json. 
   * It's probably my Go ignorance: in the EnterEveryRUle event, I can't seem to get the values for the JavaScript source unless I loop through the map. ** That can't be right. Feedback appreciated **
 
 * The build is broken currently, but not by much. Tinkering with different ways to handle rule files. My idea is as follows:
   * One JSON file (see scripts directory) that specifies the rule filenames and the node context they scan (method invocations, class declarations, etc.)
-  * Each rule is a separate .js script file in the same directory as the abpve config file.
+  * Each rule is a separate .js script file in the same directory as the above config file.
   * Why? To keep the process lean. Don't do any processing if you don't have to.
 
 ### Current Issues

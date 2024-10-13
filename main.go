@@ -73,6 +73,7 @@ var args struct {
 	DumpFormat   string `arg:"-f" help:"Format of dump command"`
 	ReportFormat string `arg:"-r" help:"Format of report command"`
 	Debug        bool   `arg:"-x" help:"Enable debug mode"`
+	Persist      bool   `arg:"-p" help:"Persist JavaScript VM session across a node type"`
 	Languages    string `arg:"-l" help:"Comma separated list of languages"`
 }
 
