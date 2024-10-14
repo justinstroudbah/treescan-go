@@ -4,7 +4,6 @@ import (
 	"reflect"
 	"strings"
 	"treescan-go/parser"
-	"treescan-go/util"
 
 	"github.com/antlr4-go/antlr/v4" // Go runtime for ANTLR
 	"github.com/robertkrimen/otto"
@@ -12,20 +11,22 @@ import (
 
 var jsonDump []string
 
+// apexListener is where we inherit our events from, which in turn provide entry points for the scan
 type apexListener struct {
 	*parser.BaseApexParserListener
 }
 
 func (a apexListener) VisitTerminal(node antlr.TerminalNode) {
 
-	//TODO implement me
+	// Not implemented
 }
 
 func (a apexListener) VisitErrorNode(node antlr.ErrorNode) {
-	//TODO implement me
+	// Not implemented
 
 }
 
+// EnterEveryRule fires on all nodes in the tree. This is where we can determine whether or not the rules are interested in them by checking against the node type (the RuleContext)
 func (a apexListener) EnterEveryRule(ctx antlr.ParserRuleContext) {
 
 	// Set up convenience variables to be used by rule scripts
@@ -43,11 +44,6 @@ func (a apexListener) EnterEveryRule(ctx antlr.ParserRuleContext) {
 	vm.Set("CONTEXT", ctx)
 	vm.Set("NODE_TYPE", nodeTypeCompact)
 
-	if values, ok := util.ScriptSources[nodeTypeCompact]; ok {
-		for _, value := range values {
-			vm.Run(value)
-		}
-	}
 }
 
 func (a apexListener) ExitEveryRule(ctx antlr.ParserRuleContext) {
