@@ -2,6 +2,8 @@
 
 **NOTE: It's worth mentioning that this code isn't pretty. It's just supposed to work for now...but it's so small that a refactor for sparkle would be pretty easy.**
 
+**NOTE: Probably going to do a big refactor of this...I've satisfied my curiosity as to whether or not this is feasable. I've done some more reading on Go in general, and there is a ton of stuff I'm not leveraging and a ton of stuff I'm basically doing wrong.**
+
 This is the brother-from-another-mother of treescan-rs...which I may abandon in favor of this.
 
 It is a static analysis tool for Salesforce source code. Rules are written in JavaScript, the engine itself is this thing.
