@@ -4,6 +4,8 @@
 
 **NOTE: Probably going to do a big refactor of this...I've satisfied my curiosity as to whether or not this is feasable. I've done some more reading on Go in general, and there is a ton of stuff I'm not leveraging and a ton of stuff I'm basically doing wrong.**
 
+**ANOTHER NOTE: I should put this stuff in a list. But something interesting I'm finding during the refactor: The way Go works file-wise, I'm organizing things by functional area rather than package or class. For example, if you look at "events.go", that's where I have the parse tree listener events. It's pretty cool actually.**
+
 This is the brother-from-another-mother of treescan-rs...which I may abandon in favor of this.
 
 It is a static analysis tool for Salesforce source code. Rules are written in JavaScript, the engine itself is this thing.

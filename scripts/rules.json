@@ -1,20 +1,25 @@
 {
-  "rules": [
+  "rules": 
+  [
     {
-      "nodeType":"MethodCallExpressionContext",
+      "name": "My Cool Test Rule",
+      "nodeType": "MethodCallExpressionContext",
+      "message" : "This rule has been violated!",
+      "description" : "When something bad happens blame the messenger",
       "priority": 1,
       "enabled": true,
-      "scripts": [
-        "C:\\repos\\go\\treescan-go\\scripts\\TestRule.js"
-      ]
+      "scriptPath": "C:\\repos\\go\\treescan-go\\scripts\\TestRule.js",
+      "scriptSource": ""
     },
     {
+      "name": "SomeOtherRUle",
       "nodeType": "StatementContext",
+      "message" : "This rule has been violated!",
+      "description" : "When something bad happens blame the messenger",
       "priority": 1,
       "enabled": true,
-      "scripts": [
-        "C:\\repos\\go\\treescan-go\\scripts\\Statements.js"
-      ]
+      "scriptPath": "C:\\repos\\go\\treescan-go\\scripts\\Statements.js",
+      "scriptSource": ""
     }
   ]
 }

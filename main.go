@@ -1,79 +1,21 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/alexflint/go-arg"   // CLI argument utility
-	"github.com/antlr4-go/antlr/v4" // Go runtime for ANTLR
-	"github.com/robertkrimen/otto"  // JavaScript engine
-	"io/ioutil"
 	"log"
 	"os"
-	"reflect"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
-	"treescan-go/parser" // Generated ANTLR parser
-	"treescan-go/util"
+
+	"github.com/alexflint/go-arg"
 )
 
-type Violation struct {
-	NodeTYpeName   string
-	SourceFileName string
-	LineNumber     int
-	Message        string
-}
-
-type apexListener struct {
-	*parser.BaseApexParserListener
-}
-
-var SourceMap map[string]util.Rule
-
-func (a apexListener) VisitTerminal(node antlr.TerminalNode) {
-
-	//TODO implement me
-}
-
-func (a apexListener) VisitErrorNode(node antlr.ErrorNode) {
-	//TODO implement me
-
-}
-
-func (a apexListener) EnterEveryRule(ctx antlr.ParserRuleContext) {
-
-	// Set up convenience variables to be used by rule scripts
-	var nodeType = reflect.TypeOf(ctx).String()
-	var contextSource = ctx.GetText()
-	var startLine = ctx.GetStart().GetLine()
-	var stopLine = ctx.GetStop().GetLine()
-
-	nodeTypeCompact := strings.Replace(nodeType, "*parser.", "", -1)
-
-	vm := otto.New()
-	vm.Set("START_LINE", startLine)
-	vm.Set("STOP_LINE", stopLine)
-	vm.Set("SOURCE", contextSource)
-	vm.Set("CONTEXT", ctx)
-	vm.Set("NODE_TYPE", nodeTypeCompact)
-
-	if values, ok := util.ScriptSources[nodeTypeCompact]; ok {
-		for _, value := range values {
-			vm.Run(value)
-		}
-	}
-}
-
-func (a apexListener) ExitEveryRule(ctx antlr.ParserRuleContext) {
-	if Args.Debug {
-		fmt.Println(reflect.TypeOf(ctx).String())
-	}
-}
-
-//TIP To run your code, right-click the code and select <b>Run</b>. Alternatively, click
-// the <icon src="AllIcons.Actions.Execute"/> icon in the gutter and select the <b>Run</b> menu item from here.
-
 var Args struct {
-	SourcePaths  string `arg:"-s" help:"Comma seperated list of file paths that will be scanned."`
+	SourcePaths  string `arg:"-s" help:"Comma seperated list of file and directory paths that will be scanned."`
+	Recursive    bool   `arg:"-v" help:"Recurse through directories supplied by SourcePaths"`
 	ReportPath   string `arg:"-o,env:TSGO_REPORT_PATH" help:"Where the reported scan results should be stored (aside from STDIO)"`
 	Dump         bool   `arg:"-d" help:"Dump all results to stdout instead of scanning"`
 	DumpFormat   string `arg:"-f" help:"Format of dump command"`
@@ -81,62 +23,130 @@ var Args struct {
 	Debug        bool   `arg:"-x" help:"Enable debug mode"`
 	Persist      bool   `arg:"-p" help:"Persist JavaScript VM session across a node type"`
 	Languages    string `arg:"-l" help:"Comma separated list of languages"`
+	ConfigFile   string `arg:"-c" help:"Optional custom configuration file"`
 }
+
+type FlatNode struct {
+	NodeType   string
+	LineNumber int
+	RawSource  string
+}
+
+type RuleConfiguration struct {
+	Rules []Rule `json:"rule"`
+}
+
+type Rule struct {
+	Name         string `json:"name"`
+	NodeType     string `json:"nodeType"`
+	Message      string `json:"message"`
+	Description  string `json:"description"`
+	Priority     int    `json:"priority"`
+	Enabled      bool   `json:"enabled"`
+	ScriptPath   string `json:"scriptPath"`
+	ScriptSource string `json:"scriptSource"`
+}
+
+var CurrentConfiguration []Rule
 
 func main() {
 	var startedAt = time.Now()
 	arg.MustParse(&Args)
 
-	// Pretty great documentation on how to integrate Otto:
-	// https://github.com/robertkrimen/otto
+	// Get configuration, persist it somewhere
+	config := loadConfiguration()
+	CurrentConfiguration := config.Rules
 
-	//"C:\\repos\\va-teams\\working\\va-teams\\force-app\\main\\default\\classes\\"
-	var path = Args.SourcePaths
-	files, err := os.ReadDir(path)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// This is just to keep the compiler from barking at us for an unused variable
+	var _ = CurrentConfiguration
 
-	//SourceMap := make(map[string]util.Rule)
+	sources := getSourceFiles(Args.SourcePaths, "cls")
 
-	SourceMap = util.ReadRuleConfiguration()
-
-	if Args.Debug {
-		scanfile("C:\\repos\\va-teams\\working\\va-teams\\force-app\\main\\default\\classes\\test_ServiceResponse.cls")
-	} else {
-		for _, file := range files {
-			var name = file.Name()
-			if strings.HasSuffix(name, ".cls") {
-				scanfile(path + name)
-			}
+	for sourceFileIndex := range len(sources) {
+		sourceFile := sources[sourceFileIndex]
+		if Args.Debug {
+			println("***************************************")
+			println(sourceFile)
+			println("***************************************")
 		}
+		ParseFile(sourceFile)
 	}
+
+	// Metrics if we need them
 	var stoppedAt = time.Now()
-	var runTime = stoppedAt.Sub(startedAt)
-	var secondsToRun = runTime.Seconds()
-	var stringRuntime = strconv.FormatFloat(secondsToRun, 'f', -1, 64)
 	if Args.Debug {
+		var stringRuntime = strconv.FormatFloat(stoppedAt.Sub(startedAt).Seconds(), 'f', -1, 64)
 		println("Execution time: ", stringRuntime, "sec.")
 	}
+
 }
 
-func scanfile(fileName string) {
-	data, err := ioutil.ReadFile(fileName)
-	if err != nil {
-		log.Fatal(err)
+func loadConfiguration() RuleConfiguration {
+	var ruleConfig RuleConfiguration
+
+	var configJSONPath = `.\scripts\rules.json`
+	if len(Args.ConfigFile) > 0 {
+		configJSONPath = Args.ConfigFile
 	}
-	var sourceString = string(data)
+	jsonConfigFile, err := os.Open(configJSONPath)
+	if err != nil {
+		fmt.Println("Error opening configuration file:", configJSONPath)
+	}
+	defer jsonConfigFile.Close()
 
-	is := antlr.NewInputStream(sourceString)
-	lexer := parser.NewApexLexer(is)
-	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
-	p := parser.NewApexParser(stream)
-	parser.ApexParserInit()
-	p.BuildParseTrees = true
+	jsonDecoder := json.NewDecoder(jsonConfigFile)
+	err = jsonDecoder.Decode(&ruleConfig)
+	if err != nil {
+		fmt.Println("Error decoding configuration file:", err)
+	}
 
-	antlr.ParseTreeWalkerDefault.Walk(&apexListener{}, p.CompilationUnit())
+	for ruleIndex := range len(ruleConfig.Rules) {
+		thisRule := ruleConfig.Rules[ruleIndex]
+		filePath := thisRule.ScriptPath
+		fileSource := thisRule.ScriptSource
 
+		if len(fileSource) > 0 {
+			continue
+		}
+
+		sourceFromFile, err := os.ReadFile(filePath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		thisRule.ScriptSource = string(sourceFromFile)
+	}
+	return ruleConfig
 }
 
-//TIP See GoLand help at <a href="https://www.jetbrains.com/help/go/">jetbrains.com/help/go/</a>.
-// Also, you can try interactive lessons for GoLand by selecting 'Help | Learn IDE Features' from the main menu.
+func getSourceFiles(rawPaths string, filterExtension string) []string {
+	pathNames := strings.Split(rawPaths, ",")
+	var sourceFilePaths []string
+
+	for pathNameIndex := range len(pathNames) {
+		pathName := pathNames[pathNameIndex]
+		info, err := os.Stat(pathName)
+		if err != nil {
+			fmt.Println("File path to source code is invalid: ", pathName)
+			log.Fatal(err)
+		}
+		if info.IsDir() {
+			err := filepath.Walk(pathName,
+				func(path string, info os.FileInfo, err error) error {
+					if err != nil {
+						return err
+					}
+					if strings.HasSuffix(path, filterExtension) {
+						fmt.Println(path, info.Size())
+						sourceFilePaths = append(sourceFilePaths, path)
+					}
+					return nil
+				})
+			if err != nil {
+				log.Println(err)
+			}
+		} else {
+			sourceFilePaths = append(sourceFilePaths, pathName)
+		}
+	}
+	return sourceFilePaths
+}
