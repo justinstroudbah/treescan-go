@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/alexflint/go-arg"   // CLI argument utility
 	"github.com/antlr4-go/antlr/v4" // Go runtime for ANTLR
 	"github.com/robertkrimen/otto"  // JavaScript engine
@@ -13,6 +12,7 @@ import (
 	"strings"
 	"time"
 	"treescan-go/parser" // Generated ANTLR parser
+	"treescan-go/treescanner"
 	"treescan-go/util"
 )
 
@@ -64,9 +64,9 @@ func (a apexListener) EnterEveryRule(ctx antlr.ParserRuleContext) {
 }
 
 func (a apexListener) ExitEveryRule(ctx antlr.ParserRuleContext) {
-	if Args.Debug {
-		fmt.Println(reflect.TypeOf(ctx).String())
-	}
+	//if Args.Debug {
+	//	fmt.Println(reflect.TypeOf(ctx).String())
+	//}
 }
 
 //TIP To run your code, right-click the code and select <b>Run</b>. Alternatively, click
@@ -102,12 +102,12 @@ func main() {
 	SourceMap = util.ReadRuleConfiguration()
 
 	if Args.Debug {
-		scanfile("C:\\repos\\va-teams\\working\\va-teams\\force-app\\main\\default\\classes\\test_ServiceResponse.cls")
+		//scanfile("C:\\repos\\va-teams\\working\\va-teams\\force-app\\main\\default\\classes\\test_ServiceResponse.cls")
 	} else {
 		for _, file := range files {
 			var name = file.Name()
 			if strings.HasSuffix(name, ".cls") {
-				scanfile(path + name)
+				//scanfile(path + name)
 			}
 		}
 	}
@@ -118,6 +118,11 @@ func main() {
 	if Args.Debug {
 		println("Execution time: ", stringRuntime, "sec.")
 	}
+
+	var s = treescanner.NewScanManager()
+	s.Init()
+
+	//mgr.Scan()
 }
 
 func scanfile(fileName string) {

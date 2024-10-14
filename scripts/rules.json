@@ -1,6 +1,7 @@
 {
   "rules": [
     {
+      "name": "My Cool Test Rule",
       "nodeType":"MethodCallExpressionContext",
       "priority": 1,
       "enabled": true,
@@ -9,6 +10,7 @@
       ]
     },
     {
+      "name": "SomeOtherRUle",
       "nodeType": "StatementContext",
       "priority": 1,
       "enabled": true,
