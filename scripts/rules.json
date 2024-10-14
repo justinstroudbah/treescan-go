@@ -2,8 +2,18 @@
   "rules": [
     {
       "nodeType":"MethodCallExpressionContext",
+      "priority": 1,
+      "enabled": true,
       "scripts": [
         "C:\\repos\\go\\treescan-go\\scripts\\TestRule.js"
+      ]
+    },
+    {
+      "nodeType": "StatementContext",
+      "priority": 1,
+      "enabled": true,
+      "scripts": [
+        "C:\\repos\\go\\treescan-go\\scripts\\Statements.js"
       ]
     }
   ]

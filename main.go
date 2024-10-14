@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/alexflint/go-arg"
-	"github.com/antlr4-go/antlr/v4"
-	"github.com/robertkrimen/otto"
+	"github.com/alexflint/go-arg"   // CLI argument utility
+	"github.com/antlr4-go/antlr/v4" // Go runtime for ANTLR
+	"github.com/robertkrimen/otto"  // JavaScript engine
 	"io/ioutil"
 	"log"
 	"os"
@@ -12,15 +12,22 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"treescan-go/parser"
+	"treescan-go/parser" // Generated ANTLR parser
 	"treescan-go/util"
 )
+
+type Violation struct {
+	NodeTYpeName   string
+	SourceFileName string
+	LineNumber     int
+	Message        string
+}
 
 type apexListener struct {
 	*parser.BaseApexParserListener
 }
 
-var sourceMap map[string][]string
+var SourceMap map[string]util.Rule
 
 func (a apexListener) VisitTerminal(node antlr.TerminalNode) {
 
@@ -40,7 +47,7 @@ func (a apexListener) EnterEveryRule(ctx antlr.ParserRuleContext) {
 	var startLine = ctx.GetStart().GetLine()
 	var stopLine = ctx.GetStop().GetLine()
 
-	nodeTypeCompact := strings.Split(nodeType, ".")[1]
+	nodeTypeCompact := strings.Replace(nodeType, "*parser.", "", -1)
 
 	vm := otto.New()
 	vm.Set("START_LINE", startLine)
@@ -49,24 +56,23 @@ func (a apexListener) EnterEveryRule(ctx antlr.ParserRuleContext) {
 	vm.Set("CONTEXT", ctx)
 	vm.Set("NODE_TYPE", nodeTypeCompact)
 
-	for nodeType, scripts := range sourceMap {
-		if nodeType == nodeTypeCompact {
-			for _, script := range scripts {
-				vm.Run(script)
-			}
+	if values, ok := util.ScriptSources[nodeTypeCompact]; ok {
+		for _, value := range values {
+			vm.Run(value)
 		}
 	}
-
 }
 
 func (a apexListener) ExitEveryRule(ctx antlr.ParserRuleContext) {
-	//TODO implement me
+	if Args.Debug {
+		fmt.Println(reflect.TypeOf(ctx).String())
+	}
 }
 
 //TIP To run your code, right-click the code and select <b>Run</b>. Alternatively, click
 // the <icon src="AllIcons.Actions.Execute"/> icon in the gutter and select the <b>Run</b> menu item from here.
 
-var args struct {
+var Args struct {
 	SourcePaths  string `arg:"-s" help:"Comma seperated list of file paths that will be scanned."`
 	ReportPath   string `arg:"-o,env:TSGO_REPORT_PATH" help:"Where the reported scan results should be stored (aside from STDIO)"`
 	Dump         bool   `arg:"-d" help:"Dump all results to stdout instead of scanning"`
@@ -79,31 +85,29 @@ var args struct {
 
 func main() {
 	var startedAt = time.Now()
-	arg.MustParse(&args)
+	arg.MustParse(&Args)
 
 	// Pretty great documentation on how to integrate Otto:
 	// https://github.com/robertkrimen/otto
 
 	//"C:\\repos\\va-teams\\working\\va-teams\\force-app\\main\\default\\classes\\"
-	var path = args.SourcePaths
+	var path = Args.SourcePaths
 	files, err := os.ReadDir(path)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	sourceMap = make(map[string][]string)
+	//SourceMap := make(map[string]util.Rule)
 
-	sourceMap = util.ReadRuleConfiguration()
+	SourceMap = util.ReadRuleConfiguration()
 
-	if args.Debug {
+	if Args.Debug {
 		scanfile("C:\\repos\\va-teams\\working\\va-teams\\force-app\\main\\default\\classes\\test_ServiceResponse.cls")
-	}
-	if !args.Debug {
+	} else {
 		for _, file := range files {
 			var name = file.Name()
 			if strings.HasSuffix(name, ".cls") {
 				scanfile(path + name)
-				fmt.Println(file.Name())
 			}
 		}
 	}
@@ -111,7 +115,9 @@ func main() {
 	var runTime = stoppedAt.Sub(startedAt)
 	var secondsToRun = runTime.Seconds()
 	var stringRuntime = strconv.FormatFloat(secondsToRun, 'f', -1, 64)
-	println("Execution time: %s\n", stringRuntime)
+	if Args.Debug {
+		println("Execution time: ", stringRuntime, "sec.")
+	}
 }
 
 func scanfile(fileName string) {
