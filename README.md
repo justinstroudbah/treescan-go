@@ -1,5 +1,8 @@
 # treescan-go
 
+** FLASH! **
+Pretty much everything is working. Anyone there? Bueller? :)
+
 **NOTE: It's worth mentioning that this code isn't pretty. It's just supposed to work for now...but it's so small that a refactor for sparkle would be pretty easy.**
 
 **NOTE: Probably going to do a big refactor of this...I've satisfied my curiosity as to whether or not this is feasable. I've done some more reading on Go in general, and there is a ton of stuff I'm not leveraging and a ton of stuff I'm basically doing wrong.**
