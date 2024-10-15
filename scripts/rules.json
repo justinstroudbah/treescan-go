@@ -3,8 +3,8 @@
   [
     {
       "name": "My Cool Test Rule",
-      "nodeType": "MethodCallExpressionContext",
-      "message" : "This rule has been violated!",
+      "nodeType": "AccessLevelContext",
+      "message" : "AccessLevelContext Violated!",
       "description" : "When something bad happens blame the messenger",
       "priority": 1,
       "enabled": true,
@@ -13,8 +13,8 @@
     },
     {
       "name": "SomeOtherRUle",
-      "nodeType": "StatementContext",
-      "message" : "This rule has been violated!",
+      "nodeType": "SetterContext",
+      "message" : "SetterContext violated!",
       "description" : "When something bad happens blame the messenger",
       "priority": 1,
       "enabled": true,
