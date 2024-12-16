@@ -238,6 +238,7 @@ func (a apexListener) EnterEveryRule(ctx antlr.ParserRuleContext) {
 }
 
 func (a apexListener) ExitEveryRule(ctx antlr.ParserRuleContext) {
+	fmt.Printf("ctx.GetStart().GetLine(): %v\n", ctx.GetStart().GetLine())
 }
 
 func (config *RuleConfiguration) GetRulesForNode(nodeType string) []Rule {
