@@ -1,43 +1,18 @@
 # treescan-go
 
-**NOTE: It's worth mentioning that this code isn't pretty. It's just supposed to work for now...but it's so small that a refactor for sparkle would be pretty easy.**
+## Update
 
-**NOTE: Probably going to do a big refactor of this...I've satisfied my curiosity as to whether or not this is feasable. I've done some more reading on Go in general, and there is a ton of stuff I'm not leveraging and a ton of stuff I'm basically doing wrong.**
+Been experimenting with using tree sitter and TypeScript as a solution but it's difficult to see past the performance considerations. While Rust is nice and will arguably find itself dominating the Linux kernel at some point, I don't see that happening any time in the near-near future. Go, on the other hand, has a proven record of satisfying results within the devops world (beyond Salesforce, which is important to think about if there is a need for quality Salesforce implementations. Developers should stop thinking as admins.)
 
-**ANOTHER NOTE: I should put this stuff in a list. But something interesting I'm finding during the refactor: The way Go works file-wise, I'm organizing things by functional area rather than package or class. For example, if you look at "events.go", that's where I have the parse tree listener events. It's pretty cool actually.**
+I have an immediate ask for something that can provide metrics (you have `[count of all variables]` variables in your codebase, `[count per analysis rule]` violate the `[the rule we're interested in]` rule.) This fits the bill.
 
-This is the brother-from-another-mother of treescan-rs...which I may abandon in favor of this.
-
-It is a static analysis tool for Salesforce source code. Rules are written in JavaScript, the engine itself is this thing.
+I've already tested this against a large codebase, so now the trick is that there needs to be a way to define quick-hit rules and render useful results.
 
 This is a rough skeleton of how things should work. Very much a work in progress, assume there be dragons everywhere.
 
-### Progress/Notes/Cautions
-
-* One thing I'm considering...when a given rule is entered (a node, if you will) I can allow the JavaScript VM's state to persist across that particular enter event for all the scripts associated with that context. 
-* Got some more stuff working, some stuff I need to figure out.
-  * Rules are now being loaded via the config json. 
-  * It's probably my Go ignorance: in the EnterEveryRUle event, I can't seem to get the values for the JavaScript source unless I loop through the map. ** That can't be right. Feedback appreciated **
-
-* The build is broken currently, but not by much. Tinkering with different ways to handle rule files. My idea is as follows:
-  * One JSON file (see scripts directory) that specifies the rule filenames and the node context they scan (method invocations, class declarations, etc.)
-  * Each rule is a separate .js script file in the same directory as the above config file.
-  * Why? To keep the process lean. Don't do any processing if you don't have to.
-
-### Current Issues
-
-This is just stuff I know about and will be fixing soon:
-* The ANTLR4 grammar doesn't like SOQL and SOSL. I'll get to the bottom of it. It doesn't break things, but it causes the parser to get confused.
-* Everything is very much in an embryonic, ad-hoc state. I have proven (to myself, at least) that:
-    * We can scan apex. Lots of it.
-    * We can execute JavaScript against contextual information about that apex whenever an ANTLR 'rule' is entered.
-    * This JavaScript has one instance per rule entrance. There is no multithreading yet.
-    * Go is a perfectly adequate language for this.
-    * **For a certain repository, running this CLI tool against the entire classes directory takes 21 seconds. Wow. This is with zero optimization.**
-
 ### Can I run this?
 
-Go for it. ~~Right now only one of the arguments is actually supported, `-s` or `--scan`. Right now it only accepts one path and doesn't recurse.~~ `-d` or `--debug` also works.
+Go for it. [Don't expect to solve the issues that faced the Brazilian economy in 1994](https://en.mercopress.com/2014/07/02/two-decades-of-the-real-the-currency-that-helped-brazil-trust-financial-stability) or anything. ~~Right now only one of the arguments is actually supported, `-s` or `--scan`. Right now it only accepts one path and doesn't recurse.~~ `-d` or `--debug` also works.
 
 ### How Will it Look Eventually?
 
@@ -50,13 +25,14 @@ Options:
                          Comma seperated list of file paths that will be scanned.
   --reportpath REPORTPATH, -o REPORTPATH
                          Where the reported scan results should be stored (aside from STDIO) [env: TSGO_REPORT_PATH]
-  --dump, -d             Dump all results to stdout instead of scanning
-  --dumpformat DUMPFORMAT, -f DUMPFORMAT
-                         Format of dump command
   --reportformat REPORTFORMAT, -r REPORTFORMAT
                          Format of report command
   --debug, -x            Enable debug mode
   --languages LANGUAGES, -l LANGUAGES
                          Comma separated list of languages
   --help, -h             display this help and exit
+
+Commands:
+  scan [options]        Initiate a static analysis scan with the supplied options
+  measure [options]     Get metrics for the supplied codebase that is friendly for deeper analysis
 ```

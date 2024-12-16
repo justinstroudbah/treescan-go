@@ -1,2 +1,1 @@
-console.log("This is another rule.")
-var HAS_VIOLATION = false;
+var HAS_VIOLATION = true;

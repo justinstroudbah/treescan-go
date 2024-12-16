@@ -12,7 +12,7 @@
       "scriptSource": ""
     },
     {
-      "name": "SomeOtherRUle",
+      "name": "SomeOtherRule",
       "nodeType": "SetterContext",
       "message" : "SetterContext violated!",
       "description" : "When something bad happens blame the messenger",
